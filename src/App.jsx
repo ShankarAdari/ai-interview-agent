@@ -9,6 +9,7 @@ import HistoryScreen from './components/HistoryScreen'
 import Background3D from './components/Background3D'
 import { Toast } from './components/UI'
 import { motion, AnimatePresence } from 'framer-motion'
+import { setApiKey } from './services/gemini'
 
 function NavBar() {
   const { state, dispatch } = useInterview()

@@ -1,8 +1,22 @@
 // Gemini AI Service
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyAtGfS1vZIv0SCYLgjPOKZs6HGNJCItozI'
-const genAI = new GoogleGenerativeAI(API_KEY)
+let API_KEY = import.meta.env.VITE_GEMINI_API_KEY || ''
+let genAI = API_KEY ? new GoogleGenerativeAI(API_KEY) : null
+
+export function setApiKey(key) {
+  API_KEY = key
+  genAI = key ? new GoogleGenerativeAI(key) : null
+}
+
+function getGenAI() {
+  if (!genAI) {
+    // Try to get from state if not set, but since this is a service, 
+    // we'll rely on the app calling setApiKey on init.
+    throw new Error('Gemini API Key is not configured. Please add it in settings.')
+  }
+  return genAI
+}
 
 let conversationHistory = []
 
@@ -11,7 +25,7 @@ export function resetConversation() {
 }
 
 export async function sendMessage(userMessage, systemContext = '') {
-  const model = genAI.getGenerativeModel({
+  const model = getGenAI().getGenerativeModel({
     model: 'gemini-1.5-flash',
     systemInstruction: systemContext,
   })
@@ -36,7 +50,7 @@ export async function sendMessage(userMessage, systemContext = '') {
 }
 
 export async function analyzeResume(resumeText) {
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+  const model = getGenAI().getGenerativeModel({ model: 'gemini-1.5-flash' })
   const prompt = `Analyze this resume and extract structured information. Return ONLY valid JSON with this exact structure:
 {
   "name": "candidate name",
@@ -66,7 +80,7 @@ ${resumeText}`
 
 export async function generateInterviewQuestion(context) {
   const { resumeData, topic, difficulty, questionNumber, previousQuestions, interviewMode } = context
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+  const model = getGenAI().getGenerativeModel({ model: 'gemini-1.5-flash' })
 
   const modeGuide = {
     technical:   'Focus exclusively on technical depth, code logic, algorithms, system design, and domain-specific knowledge.',
@@ -95,7 +109,7 @@ Do NOT repeat any previous question. Return ONLY the question text.`
 
 export async function evaluateAnswer(context) {
   const { question, answer, topic, difficulty } = context
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+  const model = getGenAI().getGenerativeModel({ model: 'gemini-1.5-flash' })
 
   const prompt = `You are an expert technical interviewer evaluating a candidate's answer.
 
@@ -134,7 +148,7 @@ Evaluate the answer and return ONLY valid JSON:
 export async function generateFinalReport(context) {
   const { resumeData, topic, answers, scores, interviewMode } = context
   const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+  const model = getGenAI().getGenerativeModel({ model: 'gemini-1.5-flash' })
 
   const prompt = `Generate a final interview evaluation report.
 

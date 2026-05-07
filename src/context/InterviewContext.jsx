@@ -5,7 +5,7 @@ const InterviewContext = createContext(null)
 const initialState = {
   // App state
   screen: 'home', // home | setup | interview | report
-  apiKey: 'AIzaSyAtGfS1vZIv0SCYLgjPOKZs6HGNJCItozI',
+  apiKey: localStorage.getItem('gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY || '',
 
   // Setup
   resumeData: null,
@@ -35,6 +35,9 @@ const initialState = {
 
 function reducer(state, action) {
   switch (action.type) {
+    case 'SET_API_KEY': 
+      localStorage.setItem('gemini_api_key', action.payload);
+      return { ...state, apiKey: action.payload }
     case 'SET_SCREEN': return { ...state, screen: action.payload }
     case 'SET_RESUME_DATA': return { ...state, resumeData: action.payload }
     case 'SET_RESUME_TEXT': return { ...state, resumeText: action.payload }

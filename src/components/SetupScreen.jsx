@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { Upload, FileText, CheckCircle, Brain, Sparkles, Zap, Target, Shield } from 'lucide-react'
 import { useInterview } from '../context/InterviewContext'
-import { analyzeResume } from '../services/gemini'
+import { analyzeResume, setApiKey } from '../services/gemini'
 import { Spinner } from './UI'
 import { motion, AnimatePresence } from 'framer-motion'
 import * as pdfjs from 'pdfjs-dist'
@@ -32,6 +32,8 @@ export default function SetupScreen() {
   const [parsing, setParsing] = useState(false)
   const [resumeParsed, setResumeParsed] = useState(false)
   const [error, setError] = useState('')
+  const [showApiInput, setShowApiInput] = useState(!state.apiKey)
+  const [tempKey, setTempKey] = useState(state.apiKey)
   const [manualResume, setManualResume] = useState('')
   const [inputMode, setInputMode] = useState('upload')
 
@@ -102,6 +104,17 @@ export default function SetupScreen() {
   const intensityLabel = state.difficulty === 'Senior' ? 'HARD' : state.difficulty === 'Mid-Level' ? 'MEDIUM' : 'EASY'
   const intensityColor = state.difficulty === 'Senior' ? 'var(--accent-rose)' : state.difficulty === 'Mid-Level' ? 'var(--accent-amber)' : 'var(--accent-emerald)'
 
+  // Sync API key to service
+  React.useEffect(() => {
+    if (state.apiKey) setApiKey(state.apiKey)
+  }, [state.apiKey])
+
+  const handleSaveKey = () => {
+    if (!tempKey.trim()) return
+    dispatch({ type: 'SET_API_KEY', payload: tempKey.trim() })
+    setShowApiInput(false)
+  }
+
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px' }}>
 
@@ -118,6 +131,55 @@ export default function SetupScreen() {
           Tailor the AI's behavior to match your career goals and technical expertise.
         </p>
       </motion.div>
+
+      {/* API Key Banner */}
+      {!state.apiKey && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass"
+          style={{ 
+            padding: '16px 24px', marginBottom: 32, 
+            background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.3)',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Shield size={20} color="var(--accent-rose)" />
+            <div>
+              <p style={{ fontWeight: 700, color: 'var(--accent-rose)', fontSize: 14 }}>API Configuration Required</p>
+              <p style={{ fontSize: 12, color: 'var(--text-secondary)' }}>A Google Gemini API Key is needed to power the AI. Your key is stored locally in your browser.</p>
+            </div>
+          </div>
+          <button className="btn btn-sm btn-secondary" onClick={() => setShowApiInput(true)}>Configure Key</button>
+        </motion.div>
+      )}
+
+      {showApiInput && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="glass"
+          style={{ padding: 24, marginBottom: 32, border: '1px solid var(--accent-primary)' }}
+        >
+          <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 12 }}>ENTER GEMINI API KEY</label>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <input 
+              type="password" 
+              className="input" 
+              placeholder="AIzaSy..." 
+              value={tempKey}
+              onChange={e => setTempKey(e.target.value)}
+              style={{ flex: 1 }}
+            />
+            <button className="btn btn-primary" onClick={handleSaveKey}>Save Key</button>
+            <button className="btn btn-ghost" onClick={() => setShowApiInput(false)}>Cancel</button>
+          </div>
+          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 10 }}>
+            Don't have a key? <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" style={{ color: 'var(--accent-primary)' }}>Get one for free at Google AI Studio</a>
+          </p>
+        </motion.div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: 32 }}>
 
