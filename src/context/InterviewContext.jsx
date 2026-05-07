@@ -5,7 +5,11 @@ const InterviewContext = createContext(null)
 const initialState = {
   // App state
   screen: 'home', // home | setup | interview | report
-  apiKey: localStorage.getItem('gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY || '',
+  apiKey: (() => {
+    const stored = localStorage.getItem('gemini_api_key');
+    if (stored !== null) return stored;
+    return import.meta.env.VITE_GEMINI_API_KEY || '';
+  })(),
 
   // Setup
   resumeData: null,
