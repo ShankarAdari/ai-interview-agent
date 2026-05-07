@@ -132,28 +132,39 @@ export default function SetupScreen() {
         </p>
       </motion.div>
 
-      {/* API Key Banner */}
-      {!state.apiKey && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glass"
-          style={{ 
-            padding: '16px 24px', marginBottom: 32, 
-            background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.3)',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      {/* API Key Status/Configuration */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="glass"
+        style={{ 
+          padding: '16px 24px', marginBottom: 32, 
+          background: state.apiKey ? 'rgba(16,185,129,0.05)' : 'rgba(244,63,94,0.05)', 
+          border: `1px solid ${state.apiKey ? 'rgba(16,185,129,0.2)' : 'rgba(244,63,94,0.2)'}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {state.apiKey ? (
+            <CheckCircle size={20} color="var(--accent-emerald)" />
+          ) : (
             <Shield size={20} color="var(--accent-rose)" />
-            <div>
-              <p style={{ fontWeight: 700, color: 'var(--accent-rose)', fontSize: 14 }}>API Configuration Required</p>
-              <p style={{ fontSize: 12, color: 'var(--text-secondary)' }}>A Google Gemini API Key is needed to power the AI. Your key is stored locally in your browser.</p>
-            </div>
+          )}
+          <div>
+            <p style={{ fontWeight: 700, color: state.apiKey ? 'var(--accent-emerald)' : 'var(--accent-rose)', fontSize: 14 }}>
+              {state.apiKey ? 'API Key Configured' : 'API Configuration Required'}
+            </p>
+            <p style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+              {state.apiKey 
+                ? 'Your Gemini API Key is active. You can change it at any time.' 
+                : 'A Google Gemini API Key is needed to power the AI. Your key is stored locally in your browser.'}
+            </p>
           </div>
-          <button className="btn btn-sm btn-secondary" onClick={() => setShowApiInput(true)}>Configure Key</button>
-        </motion.div>
-      )}
+        </div>
+        <button className="btn btn-sm btn-secondary" onClick={() => setShowApiInput(!showApiInput)}>
+          {showApiInput ? 'Hide Settings' : 'Configure Key'}
+        </button>
+      </motion.div>
 
       {showApiInput && (
         <motion.div
@@ -167,12 +178,25 @@ export default function SetupScreen() {
             <input 
               type="password" 
               className="input" 
-              placeholder="AIzaSy..." 
+              placeholder={state.apiKey ? '••••••••••••••••' : 'AIzaSy...'} 
               value={tempKey}
               onChange={e => setTempKey(e.target.value)}
               style={{ flex: 1 }}
             />
             <button className="btn btn-primary" onClick={handleSaveKey}>Save Key</button>
+            {state.apiKey && (
+              <button 
+                className="btn btn-ghost" 
+                onClick={() => {
+                  dispatch({ type: 'SET_API_KEY', payload: '' });
+                  setTempKey('');
+                  setShowApiInput(false);
+                }}
+                style={{ color: 'var(--accent-rose)' }}
+              >
+                Clear Key
+              </button>
+            )}
             <button className="btn btn-ghost" onClick={() => setShowApiInput(false)}>Cancel</button>
           </div>
           <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 10 }}>
