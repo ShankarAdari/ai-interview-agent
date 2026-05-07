@@ -404,7 +404,7 @@ export default function InterviewScreen() {
                 alt="AI Interviewer" 
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
               />
-              {isThinking && (
+              {state.isThinking && (
                 <div style={{ 
                   position: 'absolute', inset: 0, 
                   background: 'rgba(108,99,255,0.2)', backdropFilter: 'blur(4px)',

@@ -10,9 +10,9 @@ const initialState = {
   // Setup
   resumeData: null,
   resumeText: '',
-  selectedTopic: '',
+  selectedTopic: 'JavaScript',
   selectedRole: '',
-  difficulty: 2,
+  difficulty: 'Mid-Level',
   questionCount: 7,
   interviewMode: 'technical', // technical | behavioral | mixed
 

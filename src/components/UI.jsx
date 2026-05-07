@@ -219,11 +219,14 @@ export function Toast({ message, type = 'info', onClose }) {
 // ---- Difficulty Badge ----
 export function DifficultyBadge({ level }) {
   const map = {
-    1: { label: 'Easy', color: 'var(--accent-emerald)', bg: 'rgba(16,185,129,0.15)' },
-    2: { label: 'Medium', color: 'var(--accent-amber)', bg: 'rgba(245,158,11,0.15)' },
-    3: { label: 'Hard', color: 'var(--accent-rose)', bg: 'rgba(244,63,94,0.15)' },
+    1: { label: 'Junior', color: 'var(--accent-emerald)', bg: 'rgba(16,185,129,0.15)' },
+    2: { label: 'Mid-Level', color: 'var(--accent-amber)', bg: 'rgba(245,158,11,0.15)' },
+    3: { label: 'Senior', color: 'var(--accent-rose)', bg: 'rgba(244,63,94,0.15)' },
+    'Junior': { label: 'Junior', color: 'var(--accent-emerald)', bg: 'rgba(16,185,129,0.15)' },
+    'Mid-Level': { label: 'Mid-Level', color: 'var(--accent-amber)', bg: 'rgba(245,158,11,0.15)' },
+    'Senior': { label: 'Senior', color: 'var(--accent-rose)', bg: 'rgba(244,63,94,0.15)' },
   }
-  const d = map[level] || map[2]
+  const d = map[level] || map['Mid-Level']
   return (
     <span style={{
       padding: '3px 10px', borderRadius: 'var(--radius-full)',
