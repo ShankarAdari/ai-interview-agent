@@ -181,6 +181,7 @@ export default function InterviewScreen() {
         difficulty: state.difficulty,
         questionNumber: state.currentQuestionIndex + 1,
         previousQuestions: state.questions,
+        interviewMode: state.interviewMode,
       })
       dispatch({ type: 'ADD_QUESTION', payload: q })
       setCurrentQuestion(q)
@@ -233,6 +234,7 @@ export default function InterviewScreen() {
           topic: state.selectedTopic,
           answers: state.answers,
           scores,
+          interviewMode: state.interviewMode,
         })
         dispatch({ type: 'SET_REPORT', payload: report })
         dispatch({ type: 'SET_SCREEN', payload: 'report' })

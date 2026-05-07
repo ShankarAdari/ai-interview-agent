@@ -1,11 +1,10 @@
 import React, { useRef, useMemo } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Points, PointMaterial, Float } from '@react-three/drei'
-import * as THREE from 'three'
+import { MathUtils, AdditiveBlending } from 'three'
 
 function NeuralNetwork() {
   const ref = useRef()
-  const { mouse } = useThree()
   
   // Create random points for the "neurons"
   const points = useMemo(() => {
@@ -23,8 +22,9 @@ function NeuralNetwork() {
     ref.current.rotation.y -= delta / 15
     
     // Subtle reaction to mouse
-    ref.current.position.x = THREE.MathUtils.lerp(ref.current.position.x, mouse.x * 0.5, 0.1)
-    ref.current.position.y = THREE.MathUtils.lerp(ref.current.position.y, mouse.y * 0.5, 0.1)
+    const { mouse } = state
+    ref.current.position.x = MathUtils.lerp(ref.current.position.x, mouse.x * 0.5, 0.1)
+    ref.current.position.y = MathUtils.lerp(ref.current.position.y, mouse.y * 0.5, 0.1)
   })
 
   return (
@@ -36,7 +36,7 @@ function NeuralNetwork() {
           size={0.03}
           sizeAttenuation={true}
           depthWrite={false}
-          blending={THREE.AdditiveBlending}
+          blending={AdditiveBlending}
         />
       </Points>
     </group>

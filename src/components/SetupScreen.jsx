@@ -19,6 +19,14 @@ const TOPICS = [
   'Problem Solving', 'Full Stack Development'
 ]
 
+const MODES = [
+  { id: 'technical',  emoji: '⚙️', label: 'Technical',  desc: 'Code & systems'  },
+  { id: 'behavioral', emoji: '🤝', label: 'Behavioral', desc: 'STAR method'      },
+  { id: 'mixed',      emoji: '🎯', label: 'Mixed',      desc: 'Best of both'    },
+]
+
+const LEVELS = ['Junior', 'Mid-Level', 'Senior']
+
 export default function SetupScreen() {
   const { state, dispatch } = useInterview()
   const [parsing, setParsing] = useState(false)
@@ -34,8 +42,7 @@ export default function SetupScreen() {
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i)
       const content = await page.getTextContent()
-      const strings = content.items.map(item => item.str)
-      fullText += strings.join(' ') + '\n'
+      fullText += content.items.map(item => item.str).join(' ') + '\n'
     }
     return fullText
   }
@@ -43,21 +50,18 @@ export default function SetupScreen() {
   const onDrop = useCallback(async (acceptedFiles) => {
     const file = acceptedFiles[0]
     if (!file) return
-
     setParsing(true)
     setError('')
     try {
-      let text = ''
-      if (file.type === 'application/pdf') {
-        text = await extractTextFromPDF(file)
-      } else {
-        text = await file.text()
-      }
-      
+      const text = file.type === 'application/pdf'
+        ? await extractTextFromPDF(file)
+        : await file.text()
+
       dispatch({ type: 'SET_RESUME_TEXT', payload: text })
       const parsed = await analyzeResume(text)
       dispatch({ type: 'SET_RESUME_DATA', payload: parsed })
-      
+
+      // Auto-select first suggested topic from resume
       if (parsed.interviewTopics?.[0]) {
         dispatch({ type: 'SET_TOPIC', payload: parsed.interviewTopics[0] })
       }
@@ -70,14 +74,38 @@ export default function SetupScreen() {
     }
   }, [dispatch])
 
+  const handlePasteAnalyze = async () => {
+    if (!manualResume.trim()) return
+    setParsing(true)
+    setError('')
+    try {
+      dispatch({ type: 'SET_RESUME_TEXT', payload: manualResume })
+      const parsed = await analyzeResume(manualResume)
+      dispatch({ type: 'SET_RESUME_DATA', payload: parsed })
+      if (parsed.interviewTopics?.[0]) {
+        dispatch({ type: 'SET_TOPIC', payload: parsed.interviewTopics[0] })
+      }
+      setResumeParsed(true)
+    } catch (e) {
+      setError('Failed to analyze text. Please try again.')
+    } finally {
+      setParsing(false)
+    }
+  }
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: { 'application/pdf': ['.pdf'], 'text/plain': ['.txt'] },
     multiple: false
   })
 
+  const intensityLabel = state.difficulty === 'Senior' ? 'HARD' : state.difficulty === 'Mid-Level' ? 'MEDIUM' : 'EASY'
+  const intensityColor = state.difficulty === 'Senior' ? 'var(--accent-rose)' : state.difficulty === 'Mid-Level' ? 'var(--accent-amber)' : 'var(--accent-emerald)'
+
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px' }}>
+
+      {/* Page header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -92,7 +120,8 @@ export default function SetupScreen() {
       </motion.div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: 32 }}>
-        {/* Step 1: Context */}
+
+        {/* ─── Step 1: Career Context ─── */}
         <motion.div
           initial={{ x: -20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
@@ -106,30 +135,27 @@ export default function SetupScreen() {
             <h3 style={{ fontSize: 20, fontWeight: 700 }}>1. Career Context</h3>
           </div>
 
+          {/* Upload / Paste toggle */}
           <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-            <button
-              className={`btn btn-sm ${inputMode === 'upload' ? 'btn-primary' : 'btn-ghost'}`}
-              onClick={() => setInputMode('upload')}
-              style={{ flex: 1 }}
-            >
-              Upload
-            </button>
-            <button
-              className={`btn btn-sm ${inputMode === 'paste' ? 'btn-primary' : 'btn-ghost'}`}
-              onClick={() => setInputMode('paste')}
-              style={{ flex: 1 }}
-            >
-              Paste
-            </button>
+            {['upload', 'paste'].map(mode => (
+              <button
+                key={mode}
+                className={`btn btn-sm ${inputMode === mode ? 'btn-primary' : 'btn-ghost'}`}
+                onClick={() => setInputMode(mode)}
+                style={{ flex: 1, textTransform: 'capitalize' }}
+              >
+                {mode === 'upload' ? '📄 Upload' : '✏️ Paste'}
+              </button>
+            ))}
           </div>
 
           <AnimatePresence mode="wait">
             {inputMode === 'upload' ? (
               <motion.div
                 key="upload"
-                initial={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.97 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
+                exit={{ opacity: 0, scale: 0.97 }}
                 {...getRootProps()}
                 style={{
                   border: `2px dashed ${isDragActive ? 'var(--accent-primary)' : 'rgba(255,255,255,0.1)'}`,
@@ -142,60 +168,77 @@ export default function SetupScreen() {
                 {parsing ? (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
                     <Spinner size={32} />
-                    <span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Analyzing Resume...</span>
+                    <span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Parsing & Analyzing Resume...</span>
                   </div>
                 ) : resumeParsed ? (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
                     <CheckCircle size={32} color="var(--accent-emerald)" />
-                    <span style={{ fontSize: 14, color: 'var(--accent-emerald)', fontWeight: 600 }}>Resume Analyzed!</span>
-                    <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>{state.resumeData?.name}</p>
-                    <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); setResumeParsed(false); }}>Change File</button>
+                    <span style={{ fontSize: 15, color: 'var(--accent-emerald)', fontWeight: 700 }}>Resume Analyzed!</span>
+                    {state.resumeData?.name && (
+                      <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                        👤 {state.resumeData.name}
+                        {state.resumeData.yearsOfExperience ? ` · ${state.resumeData.yearsOfExperience}yr exp` : ''}
+                      </span>
+                    )}
+                    {state.resumeData?.topTechnologies?.length > 0 && (
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center', marginTop: 4 }}>
+                        {state.resumeData.topTechnologies.slice(0, 4).map(t => (
+                          <span key={t} className="tag" style={{ fontSize: 11 }}>{t}</span>
+                        ))}
+                      </div>
+                    )}
+                    <button className="btn btn-ghost btn-sm" style={{ marginTop: 4 }} onClick={e => { e.stopPropagation(); setResumeParsed(false) }}>
+                      Change File
+                    </button>
                   </div>
                 ) : (
                   <>
                     <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                       <Upload size={24} color="var(--text-muted)" />
                     </div>
-                    <p style={{ fontWeight: 600, marginBottom: 4 }}>Drop Resume (PDF/TXT)</p>
-                    <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Max size 5MB</p>
+                    <p style={{ fontWeight: 600, marginBottom: 6, fontSize: 15 }}>Drop Resume (PDF / TXT)</p>
+                    <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>or click to browse · Max 5MB</p>
+                    <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 12 }}>
+                      Optional — skip to configure manually below
+                    </p>
                   </>
                 )}
               </motion.div>
             ) : (
               <motion.div
                 key="paste"
-                initial={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.97 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
+                exit={{ opacity: 0, scale: 0.97 }}
               >
                 <textarea
                   className="textarea"
-                  placeholder="Paste your resume or professional bio here..."
+                  placeholder="Paste your resume, LinkedIn summary, or professional bio here..."
                   value={manualResume}
-                  onChange={(e) => setManualResume(e.target.value)}
+                  onChange={e => setManualResume(e.target.value)}
                   style={{ height: 160, fontSize: 14 }}
                 />
+                {resumeParsed && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, color: 'var(--accent-emerald)', fontSize: 13, fontWeight: 600 }}>
+                    <CheckCircle size={16} /> Context analyzed successfully
+                  </div>
+                )}
                 <button
                   className="btn btn-secondary btn-sm"
                   style={{ marginTop: 12, width: '100%' }}
-                  onClick={async () => {
-                    setParsing(true)
-                    const parsed = await analyzeResume(manualResume)
-                    dispatch({ type: 'SET_RESUME_DATA', payload: parsed })
-                    setResumeParsed(true)
-                    setParsing(false)
-                  }}
-                  disabled={!manualResume || parsing}
+                  onClick={handlePasteAnalyze}
+                  disabled={!manualResume.trim() || parsing}
                 >
-                  {parsing ? <Spinner size={16} /> : <><Sparkles size={14} /> Process Context</>}
+                  {parsing ? <Spinner size={16} /> : <><Sparkles size={14} /> Analyze Context</>}
                 </button>
               </motion.div>
             )}
           </AnimatePresence>
+
           {error && <p style={{ color: 'var(--accent-rose)', fontSize: 13, marginTop: 12 }}>{error}</p>}
         </motion.div>
 
-        {/* Step 2: Settings */}
+        {/* ─── Step 2: Interview Scope ─── */}
         <motion.div
           initial={{ x: 20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
@@ -209,7 +252,9 @@ export default function SetupScreen() {
             <h3 style={{ fontSize: 20, fontWeight: 700 }}>2. Interview Scope</h3>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+
+            {/* Primary Domain */}
             <div>
               <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Primary Domain</label>
               <select
@@ -221,10 +266,38 @@ export default function SetupScreen() {
               </select>
             </div>
 
+            {/* Interview Mode */}
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Interview Mode</label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                {MODES.map(m => {
+                  const active = state.interviewMode === m.id
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => dispatch({ type: 'SET_MODE', payload: m.id })}
+                      style={{
+                        padding: '10px 6px', borderRadius: 'var(--radius-md)', border: 'none',
+                        background: active ? 'rgba(108,99,255,0.18)' : 'rgba(255,255,255,0.03)',
+                        outline: active ? '1px solid rgba(108,99,255,0.45)' : '1px solid rgba(255,255,255,0.07)',
+                        color: active ? 'var(--accent-secondary)' : 'var(--text-secondary)',
+                        cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s'
+                      }}
+                    >
+                      <div style={{ fontSize: 18, marginBottom: 3 }}>{m.emoji}</div>
+                      <div style={{ fontSize: 12, fontWeight: 700 }}>{m.label}</div>
+                      <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>{m.desc}</div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Interview Depth */}
             <div>
               <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Interview Depth</label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-                {['Junior', 'Mid-Level', 'Senior'].map(lvl => (
+                {LEVELS.map(lvl => (
                   <button
                     key={lvl}
                     className={`btn btn-sm ${state.difficulty === lvl ? 'btn-primary' : 'btn-ghost'}`}
@@ -236,6 +309,7 @@ export default function SetupScreen() {
               </div>
             </div>
 
+            {/* Session Length */}
             <div>
               <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Session Length</label>
               <input
@@ -254,32 +328,31 @@ export default function SetupScreen() {
           </div>
         </motion.div>
 
-        {/* Summary Card */}
+        {/* ─── Launch Card ─── */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.15 }}
           className="glass"
           style={{
-            padding: 32, gridColumn: '1 / -1', marginTop: 16,
-            background: 'var(--gradient-card)', border: '1px solid rgba(108, 99, 255, 0.3)',
+            padding: 32, gridColumn: '1 / -1',
+            background: 'var(--gradient-card)', border: '1px solid rgba(108,99,255,0.3)',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 24
           }}
         >
-          <div style={{ display: 'flex', gap: 32 }}>
-            <div style={{ textAlign: 'center' }}>
-              <span style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>INTENSITY</span>
-              <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--accent-rose)' }}>
-                {state.difficulty === 'Senior' ? 'HARD' : state.difficulty === 'Mid-Level' ? 'MEDIUM' : 'EASY'}
-              </span>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <span style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>EST. TIME</span>
-              <span style={{ fontSize: 18, fontWeight: 800 }}>{state.questionCount * 3} MIN</span>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <span style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>PLATFORM</span>
-              <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--accent-cyan)' }}>VIRTUAL</span>
-            </div>
+          <div style={{ display: 'flex', gap: 40, flexWrap: 'wrap' }}>
+            {[
+              { label: 'MODE',      value: state.interviewMode?.toUpperCase() || 'TECHNICAL', color: 'var(--accent-primary)' },
+              { label: 'INTENSITY', value: intensityLabel, color: intensityColor },
+              { label: 'EST. TIME', value: `${state.questionCount * 3} MIN`, color: 'var(--text-primary)' },
+              { label: 'QUESTIONS', value: state.questionCount, color: 'var(--accent-cyan)' },
+              { label: 'PLATFORM',  value: 'VIRTUAL', color: 'var(--text-primary)' },
+            ].map(({ label, value, color }) => (
+              <div key={label} style={{ textAlign: 'center' }}>
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginBottom: 4, fontWeight: 700 }}>{label}</span>
+                <span style={{ fontSize: 18, fontWeight: 800, color }}>{value}</span>
+              </div>
+            ))}
           </div>
 
           <button

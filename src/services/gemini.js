@@ -65,10 +65,16 @@ ${resumeText}`
 }
 
 export async function generateInterviewQuestion(context) {
-  const { resumeData, topic, difficulty, questionNumber, previousQuestions } = context
+  const { resumeData, topic, difficulty, questionNumber, previousQuestions, interviewMode } = context
   const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
 
-  const prompt = `You are an expert technical interviewer. Generate interview question #${questionNumber}.
+  const modeGuide = {
+    technical:   'Focus exclusively on technical depth, code logic, algorithms, system design, and domain-specific knowledge.',
+    behavioral:  'Focus on behavioral and situational questions using the STAR method. Ask about past experiences, teamwork, conflict resolution, and leadership.',
+    mixed:       'Alternate between technical questions (code, systems, concepts) and behavioral questions (STAR-method, soft skills). Aim for natural balance.',
+  }
+
+  const prompt = `You are an expert ${interviewMode || 'technical'} interviewer. Generate interview question #${questionNumber}.
 
 Candidate Profile:
 - Skills: ${resumeData?.skills?.join(', ') || topic}
@@ -76,11 +82,12 @@ Candidate Profile:
 - Experience: ${resumeData?.yearsOfExperience || 'N/A'} years
 
 Topic: ${topic}
-Difficulty: ${difficulty} (1=easy, 2=medium, 3=hard)
+Difficulty: ${difficulty} (Junior=easy, Mid-Level=medium, Senior=hard)
+Interview Mode: ${interviewMode || 'technical'} — ${modeGuide[interviewMode] || modeGuide.technical}
 Previous questions asked: ${previousQuestions?.join(' | ') || 'None'}
 
-Generate ONE fresh interview question. Make it specific to their background. Include a brief context if needed.
-Return ONLY the question text, nothing else.`
+Generate ONE fresh, specific interview question relevant to the candidate's background.
+Do NOT repeat any previous question. Return ONLY the question text.`
 
   const result = await model.generateContent(prompt)
   return result.response.text().trim()
@@ -125,7 +132,7 @@ Evaluate the answer and return ONLY valid JSON:
 }
 
 export async function generateFinalReport(context) {
-  const { resumeData, topic, answers, scores } = context
+  const { resumeData, topic, answers, scores, interviewMode } = context
   const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length
   const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
 
@@ -133,6 +140,7 @@ export async function generateFinalReport(context) {
 
 Candidate: ${resumeData?.name || 'Candidate'}
 Topic: ${topic}
+Interview Mode: ${interviewMode || 'technical'}
 Average Score: ${avgScore.toFixed(1)}/100
 Number of Questions: ${answers.length}
 
@@ -141,7 +149,7 @@ Return ONLY valid JSON:
   "overallScore": ${Math.round(avgScore)},
   "grade": "<A+|A|B+|B|C+|C|D|F>",
   "verdict": "<Strongly Recommended|Recommended|Consider|Not Recommended>",
-  "summary": "<3-4 sentence overall assessment>",
+  "summary": "<3-4 sentence overall assessment tailored to the ${interviewMode || 'technical'} interview style>",
   "technicalScore": <number 0-100>,
   "communicationScore": <number 0-100>,
   "problemSolvingScore": <number 0-100>,
