@@ -385,8 +385,41 @@ export default function InterviewScreen() {
         <motion.div
           initial={{ x: -50, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
-          style={{ padding: '16px 0 16px 16px', overflowY: 'auto' }}
+          style={{ 
+            width: 280, padding: '16px 0 16px 16px', 
+            display: 'flex', flexDirection: 'column', gap: 16 
+          }}
         >
+          {/* AI Interviewer Avatar */}
+          <div className="glass glow-primary" style={{ padding: 12, textAlign: 'center' }}>
+            <div style={{ 
+              width: '100%', aspectRatio: '1/1', borderRadius: 'var(--radius-md)', 
+              overflow: 'hidden', position: 'relative', marginBottom: 12,
+              background: 'rgba(0,0,0,0.4)', border: '1px solid var(--glass-border)'
+            }}>
+              <img 
+                src={`${import.meta.env.BASE_URL}interviewer.png`} 
+                alt="AI Interviewer" 
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+              />
+              {isThinking && (
+                <div style={{ 
+                  position: 'absolute', inset: 0, 
+                  background: 'rgba(108,99,255,0.2)', backdropFilter: 'blur(4px)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  <Spinner size={32} />
+                </div>
+              )}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: isTyping ? 'var(--accent-primary)' : 'var(--accent-emerald)', animation: isTyping ? 'pulse 1s infinite' : 'none' }} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>
+                {isTyping ? 'INTERVIEWER SPEAKING' : 'LISTENING...'}
+              </span>
+            </div>
+          </div>
+
           <QuestionSidebar
             questions={state.questions}
             evaluations={state.evaluations}
@@ -396,6 +429,37 @@ export default function InterviewScreen() {
 
         {/* Interview Area */}
         <div style={{ flex: 1, padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+          
+          {/* User Webcam (Simulated/Overlay) */}
+          <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 100 }}>
+             <div className="glass" style={{ 
+               width: 180, height: 120, borderRadius: 'var(--radius-md)', 
+               overflow: 'hidden', border: '2px solid var(--accent-primary)',
+               boxShadow: 'var(--shadow-glow)', position: 'relative',
+               background: '#000'
+             }}>
+               <div style={{ 
+                 position: 'absolute', top: 8, left: 8, 
+                 background: 'rgba(244,63,94,0.8)', color: '#fff', 
+                 fontSize: 9, fontWeight: 800, padding: '2px 6px', 
+                 borderRadius: 4, display: 'flex', alignItems: 'center', gap: 4
+               }}>
+                 <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff', animation: 'pulse 1s infinite' }} />
+                 REC
+               </div>
+               <div style={{ 
+                 width: '100%', height: '100%', 
+                 display: 'flex', alignItems: 'center', justifyContent: 'center',
+                 color: 'var(--text-muted)'
+               }}>
+                 <div style={{ textAlign: 'center' }}>
+                   <div style={{ fontSize: 10, fontWeight: 700 }}>USER_FEED</div>
+                   <div style={{ fontSize: 8 }}>VIRTUAL_CAM_ACTIVE</div>
+                 </div>
+               </div>
+               {isRecording && <VoiceWave active={isRecording} />}
+             </div>
+          </div>
 
           {/* Question Card */}
           <motion.div
