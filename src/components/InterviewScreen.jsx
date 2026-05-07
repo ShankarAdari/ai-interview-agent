@@ -4,7 +4,7 @@ import {
   Mic, MicOff, Volume2, AlertCircle, CheckCircle2, X
 } from 'lucide-react'
 import { useInterview } from '../context/InterviewContext'
-import { generateInterviewQuestion, evaluateAnswer, generateFinalReport, resetConversation } from '../services/gemini'
+import { generateInterviewQuestion, evaluateAnswer, generateFinalReport, resetConversation, speakText } from '../services/gemini'
 import { TypingText, Spinner, DifficultyBadge, MicButton, VoiceWave } from './UI'
 
 function QuestionSidebar({ questions, evaluations, currentIdx }) {
@@ -139,6 +139,7 @@ export default function InterviewScreen() {
   const [timeLeft, setTimeLeft] = useState(120)
   const [timerActive, setTimerActive] = useState(false)
   const [questionReady, setQuestionReady] = useState(false)
+  const [voiceEnabled, setVoiceEnabled] = useState(true)
   const [error, setError] = useState('')
   const textareaRef = useRef(null)
   const recognitionRef = useRef(null)
@@ -196,6 +197,7 @@ export default function InterviewScreen() {
     setQuestionReady(true)
     setTimerActive(true)
     textareaRef.current?.focus()
+    if (voiceEnabled) speakText(currentQuestion)
   }
 
   const handleSubmitAnswer = async () => {
@@ -319,6 +321,19 @@ export default function InterviewScreen() {
           <Brain size={20} color="var(--accent-primary)" />
           <span style={{ fontWeight: 700, fontSize: 15 }}>{state.selectedTopic}</span>
           <DifficultyBadge level={state.difficulty} />
+          <button 
+            onClick={() => setVoiceEnabled(!voiceEnabled)}
+            className="btn btn-ghost btn-sm"
+            style={{ 
+              padding: '4px 8px', 
+              background: voiceEnabled ? 'rgba(108,99,255,0.1)' : 'transparent',
+              color: voiceEnabled ? 'var(--accent-secondary)' : 'var(--text-muted)'
+            }}
+            title={voiceEnabled ? "Mute AI Voice" : "Unmute AI Voice"}
+          >
+            {voiceEnabled ? <Volume2 size={16} /> : <X size={16} />}
+            <span style={{ fontSize: 10, marginLeft: 4 }}>{voiceEnabled ? 'VOICE ON' : 'VOICE OFF'}</span>
+          </button>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>

@@ -146,11 +146,11 @@ Return ONLY valid JSON:
   "communicationScore": <number 0-100>,
   "problemSolvingScore": <number 0-100>,
   "confidenceScore": <number 0-100>,
-  "keyStrengths": ["strength1", "strength2", "strength3"],
-  "areasToImprove": ["area1", "area2", "area3"],
+  "strengths": ["strength1", "strength2", "strength3"],
+  "improvementAreas": ["area1", "area2", "area3"],
   "learningResources": [{"topic": "...", "resource": "..."}],
   "nextSteps": ["step1", "step2", "step3"],
-  "hireProbability": <number 0-100>
+  "hiringProbability": <number 0-100>
 }`
 
   const result = await model.generateContent(prompt)
@@ -158,4 +158,26 @@ Return ONLY valid JSON:
   const jsonMatch = text.match(/\{[\s\S]*\}/)
   if (jsonMatch) return JSON.parse(jsonMatch[0])
   return null
+}
+
+export function speakText(text) {
+  if (!('speechSynthesis' in window)) return
+  
+  // Cancel any ongoing speech
+  window.speechSynthesis.cancel()
+  
+  const utterance = new SpeechSynthesisUtterance(text)
+  const voices = window.speechSynthesis.getVoices()
+  
+  // Try to find a good English voice
+  const premiumVoice = voices.find(v => v.name.includes('Google') && v.lang.includes('en')) || 
+                       voices.find(v => v.lang.includes('en'))
+                       
+  if (premiumVoice) utterance.voice = premiumVoice
+  
+  utterance.pitch = 1.0
+  utterance.rate = 0.95 // Slightly slower for clarity
+  utterance.volume = 1.0
+  
+  window.speechSynthesis.speak(utterance)
 }
